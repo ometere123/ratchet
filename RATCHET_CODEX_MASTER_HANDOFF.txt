@@ -1,0 +1,43 @@
+RATCHET — CODEX MASTER HANDOFF
+===========================================
+
+This folder is already the complete proposed contract-only repository. Do not clone a different project, do not recreate from scratch, and do not build a frontend. Open this unzipped folder in Codex and work directly here.
+
+REPOSITORY: https://github.com/ometere123/ratchet
+PRIMARY NETWORK: STABLE STUDIONET, chain ID 61999, RPC https://studio.genlayer.com/api.
+CLI: genlayer@0.39.1, locally installed in THIS repository. The PC global CLI is 0.40.0rc2; NEVER use it.
+DO NOT USE: studio-dev, studio-next, chain 61997, RC CLI, Docker-dependent developer environment, wallet snaps, frontend, backend or unverified economic paths.
+
+Mission: finish Ratchet, prove it with real GenLayer Direct Mode and finalised stable StudioNet receipts, perform a strict adversarial self-review, then push any corrections/proofs to ometere123/ratchet.
+
+SEQUENCE:
+1. Read README.md, docs/ARCHITECTURE.md, docs/CONSENSUS.md, docs/THREAT_MODEL.md, docs/INTEGRATION.md and DEPLOYMENT.md. Inspect ALL contract/test code before editing.
+2. Run python scripts/preflight.py and python -m pytest tests/test_offline.py -q. These offline tests have already passed 14/14 here, and structural preflight 14/14. This is NOT a GenVM test result.
+3. npm install inside this repo. It installs devDependency genlayer=0.39.1. Verify ./node_modules/.bin/genlayer --version. Generate/commit a genuine package-lock.json. Never run global genlayer.
+4. Install Python Direct Mode deps from requirements-dev.txt; run gltest direct_tests/test_ratchet_direct.py -v -s. Fix actual SDK/runtime failures, including pickling, serialization, and storage declarations. Extend Direct Mode with strong boundary and adversarial tests. Do NOT claim it passed until executed.
+5. Validate with correct stable GenVM lint and preflight tools available locally. Ensure the source dependency header matches StudioNet's pinned GenVM; do not use preview or swap packages just to make lint green. Confirm no false-positive acceptance for exception/scope/actor/obligation/threshold weakening.
+6. Run node scripts/assert_studionet.mjs; it must return 61999. Inspect ./node_modules/.bin/genlayer network info after setting studionet.
+7. Deploy ONLY the stable primary contract to 61999 using npm run deploy:guarded (preferred cross-platform) or bash scripts/deploy_studionet.sh; LOCAL CLI only. Wait for FINALIZED AND execution success. Save raw receipt/trace, address, tx hash and source SHA-256. Do not guess or copy addresses from unrelated repos.
+8. Demonstrate: create/seal policy, accept a strict strengthening, reject a weakening, reject ambiguity, reject owner/unsealed/stale writes, verify immutable genesis and head hashes. Use actual consensus; track validator outcomes honestly.
+9. OPTIONAL but strongly recommended: deploy the tiny VersionGatedExecutor consumer contract to 61999. Demonstrate blocked-before-minimum-version and success-after minimum-version using typed contract view, with both real traces. Never portray docs as proof.
+10. Update DEPLOYMENT.md/SUBMISSION.md with grounded chain evidence. Run scripts/preflight.py and tests again. Push final changes to ometere123/ratchet. Do not overwrite unrelated commits; this repo began empty when constructed.
+
+REVIEW THREATS TO ADDRESS:
+- old rule vs new rule vs genesis independent semantic inclusion
+- weakened actor/resource/territory by subtle synonyms
+- hidden exceptions and new authority grants
+- stricter one dimension but weaker another (INCOMPARABLE)
+- equivalent restatements not mistakenly accepted as stricter
+- malicious leader returning correct-looking STRICTER JSON
+- adversarial audit returning a weakening witness
+- malformed or unavailable inference failing closed
+- stale submitted head hash and old policy roots
+- attempts to reset governance by creating a new unpinned policy
+- no privileged reset/repeal of sealed tracks
+- actual consensus and finality status, not only optimistic ACCEPTED
+
+IMPORTANT HONESTY:
+A positive LLM semantic judgement is not a formal mathematical proof of subset containment for arbitrary natural language. Document that limitation. The offline mock uses SHA3 as a stub for runtime Keccak; it is not bytecode parity. Real GenVM, Direct Mode and StudioNet evidence are mandatory before declaring the work complete.
+
+SUCCESS CRITERIA:
+A reproducibly deployed, source-verified StudioNet-only standalone Intelligent Contract primitive, independent substantive consensus tests including malicious-leader cases, immutable lineage and no downgrade override, verified real consumer or direct state proof, clean repository, transparent evidence.

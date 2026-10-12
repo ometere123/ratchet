@@ -1,0 +1,17 @@
+{
+  "name": "ratchet-studionet-contract",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Contract-only semantic monotonic policy primitive for stable GenLayer StudioNet chain 61999",
+  "scripts": {
+    "cli:version": "genlayer --version",
+    "network:info": "genlayer network info",
+    "network:select": "genlayer network set studionet",
+    "deploy:contract": "genlayer deploy --contract contracts/ratchet.py --rpc https://studio.genlayer.com/api",
+    "network:guard": "node scripts/assert_studionet.mjs",
+    "deploy:guarded": "node scripts/deploy_studionet.mjs"
+  },
+  "devDependencies": {
+    "genlayer": "0.39.1"
+  }
+}

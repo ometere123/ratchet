@@ -1,0 +1,4 @@
+pytest>=8.2,<9
+# For real GenVM Direct Mode on the developer PC, install the GenLayer test package
+# matching the stable GenVM environment. Do not assume offline pytest simulates consensus.
+genlayer-test==0.29.0
