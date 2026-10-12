@@ -12,7 +12,7 @@
     "SUBMISSION.md": "42fb6f1c4d5543543c014b9afc2ab5cc83822ac56f46b185a94e37f84033310e",
     "contracts/ratchet.py": "e5e9e2eefcb8ae1a0d789c20ce06df9727097cb9c2eb06967618d6f2e45df0a5",
     "contracts/ratchet_consumer_example.py": "63a9ea986555c6b4c6598bb553b9d41e3d760700fe30ed373ea36c20bbd83e75",
-    "direct_tests/conftest.py": "13b35571bc0d110b47f7c2fe220903870f5eb6b8c502ef73fd94d9e966ec28db",
+    "direct_tests/conftest.py": "8e4ceb3bd2678dfb46b87cd077491b0e651dcb361d059fab3de84098f73556df",
     "direct_tests/test_ratchet_direct.py": "ee7a4cdce4e327b9f60cd6baee42849484579f940c7479897228cd72b9f325bd",
     "docs/ARCHITECTURE.md": "ba8ad77fe85a7da4915093026b17a841e553003498138a66d213f33348f47b2e",
     "docs/CONSENSUS.md": "76568e438d55d497cf59238447b89a9619b7ee2edf5dda11462cf4f54e3c3278",

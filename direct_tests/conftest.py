@@ -9,10 +9,15 @@ tests. This shim is test-only and does not alter contract/runtime behavior.
 
 import os
 
-from gltest.direct import loader
+from gltest.direct import loader, sdk_loader
 
 
 _original_inject = loader._inject_message_to_fd0
+
+# The contract header pins the stable GenVM v0.2.12 runner. The Direct Mode
+# helper otherwise follows GitHub's moving "latest" release when its cache is
+# cold, which can select an unavailable RC and make CI non-reproducible.
+sdk_loader.get_latest_version = lambda: "v0.2.12"
 
 
 def _windows_safe_inject(vm):
