@@ -23,6 +23,16 @@ def open_track(direct_deploy):
     return c,p,t,root
 
 
+def open_two_tracks(direct_deploy):
+    c=direct_deploy('contracts/ratchet.py')
+    p=c.create_policy('Finance', 'Independent monotonic controls.')
+    t1=c.register_track(p,'approvals',DOMAIN,BASE)
+    t2=c.register_track(p,'limits','Treasury withdrawal limits for all operators and recipients.',
+                        'Every withdrawal has a daily limit.')
+    root=c.seal_policy(p)
+    return c,p,t1,t2,root
+
+
 def with_leader(direct_vm, value=None):
     direct_vm.mock_llm(r'RATCHET / LEADER ASSESSMENT', value or assessment())
 
@@ -60,6 +70,20 @@ def test_independent_validator_approves_when_substantive_analysis_agrees(direct_
     direct_vm.mock_llm(r'RATCHET / ADVERSARIAL COUNTEREXAMPLE AUDIT',
         {'weakened':False,'incomparable':False,'ambiguous':False})
     assert direct_vm.run_validator() is True
+
+
+def test_tightening_witness_is_explicitly_leader_reported(direct_vm,direct_deploy):
+    c,p,t,root=open_track(direct_deploy)
+    with_leader(direct_vm, assessment(witness='leader explanation only'))
+    c.propose_revision(t,THREE,c.current_track_hash(t))
+    direct_vm.clear_mocks()
+    direct_vm.mock_llm(r'RATCHET / INDEPENDENT ASSESSMENT', assessment(witness='independent wording'))
+    direct_vm.mock_llm(r'RATCHET / ADVERSARIAL COUNTEREXAMPLE AUDIT',
+        {'weakened':False,'incomparable':False,'ambiguous':False})
+    assert direct_vm.run_validator() is True
+    # The material verdict is consensus-bound; the prose witness is labeled as
+    # a leader explanation rather than presented as independently agreed proof.
+    assert c.get_amendment(1)['witness_provenance']=='LEADER_REPORTED_EXPLANATION'
 
 
 def test_independent_validator_vetoes_malicious_stricter(direct_vm,direct_deploy):
@@ -186,6 +210,26 @@ def test_genesis_hash_must_match(direct_deploy):
     c,p,t,root=open_track(direct_deploy)
     assert c.is_track_at_least(t,1,'fake') is False
     assert c.is_policy_at_least(p,0,'fake') is False
+
+
+def test_policy_gate_counts_distinct_qualified_tracks_not_revisions(direct_vm,direct_deploy):
+    c,p,t1,t2,root=open_two_tracks(direct_deploy)
+    with_leader(direct_vm)
+    c.propose_revision(t1,THREE,c.current_track_hash(t1))
+    c.propose_revision(t1,FOUR,c.current_track_hash(t1))
+    assert c.get_policy(p)['accepted_count']==2
+    # Two accepted revisions on one track do not qualify a two-track gate.
+    assert c.is_policy_at_least(p,2,root) is False
+    c.propose_revision(t2,'Every withdrawal has a lower daily limit.',c.current_track_hash(t2))
+    assert c.is_policy_at_least(p,2,root) is True
+
+
+def test_consumer_binding_requires_existing_track_and_genesis(direct_deploy):
+    c,p,t,root=open_track(direct_deploy)
+    track=c.get_track(t)
+    assert c.is_track_at_least(t,1,track['genesis_hash']) is True
+    assert c.is_track_at_least(t,1,'wrong-genesis') is False
+    assert c.is_track_at_least(t+999,1,track['genesis_hash']) is False
 
 
 def test_policy_head_advances_only_when_accepted(direct_vm,direct_deploy):

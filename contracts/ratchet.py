@@ -26,6 +26,7 @@ REL_AMBIGUOUS = 5
 
 STATUS_ACCEPTED = 1
 STATUS_REJECTED = 2
+WITNESS_PROVENANCE = 'LEADER_REPORTED_EXPLANATION'
 
 
 def digest(value: str) -> str:
@@ -215,6 +216,7 @@ class Amendment:
     prior_version: u32
     resulting_version: u32
     resulting_head_hash: str
+    witness_provenance: str
 
 
 @gl.contract_interface
@@ -430,6 +432,10 @@ class Ratchet(gl.Contract):
         rec.reason = str(result['reason'])
         rec.weakening_witness = str(result['weakening_witness'])
         rec.tightening_witness = str(result['tightening_witness'])
+        # The witness is retained for audit context, but it is not a separately
+        # agreed natural-language certificate. Consensus binds the relations,
+        # frozen scope and adversarial audit result below.
+        rec.witness_provenance = WITNESS_PROVENANCE
         rec.prior_version = t.version
         accepted = admissible(result)
         rec.status = u8(STATUS_ACCEPTED if accepted else STATUS_REJECTED)
@@ -479,7 +485,9 @@ class Ratchet(gl.Contract):
                 'status':'ACCEPTED' if int(a.status)==STATUS_ACCEPTED else 'REJECTED',
                 'reason':str(a.reason),'weakening_witness':str(a.weakening_witness),
                 'tightening_witness':str(a.tightening_witness),'prior_version':int(a.prior_version),
-                'resulting_version':int(a.resulting_version),'resulting_head_hash':str(a.resulting_head_hash)}
+                'resulting_version':int(a.resulting_version),'resulting_head_hash':str(a.resulting_head_hash),
+                'witness_provenance':str(a.witness_provenance),
+                'consensus_facts':['relation_to_head','relation_to_genesis','same_scope','adversarial_audit_clear']}
 
     @gl.public.view
     def current_track_hash(self, track_id: u256) -> str:
@@ -501,10 +509,24 @@ class Ratchet(gl.Contract):
 
     @gl.public.view
     def is_policy_at_least(self, policy_id: u256, minimum_accepted: u32, expected_genesis_hash: str) -> bool:
+        """Return whether distinct policy tracks have each tightened.
+
+        `minimum_accepted` is retained for interface compatibility, but it is
+        deliberately interpreted as a minimum number of distinct qualified
+        tracks, not the aggregate number of accepted revisions. Repeated
+        tightening of one track therefore cannot satisfy a multi-track gate.
+        Consumers needing exact requirements should use is_track_at_least for
+        each pinned track and genesis hash.
+        """
         p=self.policies.get(policy_id)
         if p is None or not bool(p.sealed): return False
-        return (str(p.genesis_hash)==expected_genesis_hash
-                and int(p.accepted_count)>=int(minimum_accepted))
+        if str(p.genesis_hash) != expected_genesis_hash: return False
+        qualified = 0
+        for track_id in p.tracks:
+            track = self.tracks.get(track_id)
+            if track is not None and int(track.version) > 1:
+                qualified += 1
+        return qualified >= int(minimum_accepted)
 
     @gl.public.view
     def matches_policy_head(self, policy_id: u256, expected_head_hash: str) -> bool:

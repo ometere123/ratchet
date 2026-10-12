@@ -4,10 +4,10 @@
 |---|---|---|
 | Owner silently weakens policy | cannot edit/remove sealed genesis/track; requires independently accepted STRICTER vs head and genesis | leader/validators can still misinterpret language |
 | Owner resets policy | new policy has a **different** genesis hash; consumers pin Ratchet address, policy/track and root | consumers must not accept arbitrary new policy IDs |
-| Gradual weakening across revisions | checks against current AND immutable genesis | correlated mistaken inclusions can still accumulate |
+| Gradual weakening across revisions | checks against current AND immutable genesis; multi-track gates count distinct qualified tracks rather than total revisions | correlated mistaken inclusions can still accumulate |
 | Emergency carve-out disguised as hardening | explicitly called out in prompts and adversarial counterexample search | model failure possible |
 | Scope/actor substitution | frozen domain comparison and same_scope gate | subtle scope changes may be missed |
-| Malicious leader shapes JSON correctly but lies | independent validator analysis of same inputs and second-stage counterexample attempt | independent models may be correlated |
+| Malicious leader shapes JSON correctly but lies | independent validator analysis of same inputs and second-stage counterexample attempt; bounded consensus facts are separated from leader-reported witness prose | independent models may be correlated and witness prose is explanatory, not independently identical |
 | Prompt injection in policy text | delimited untrusted data; instructions to ignore embedded directions | no natural language prompt is absolute protection |
 | Validator outage | invalid, missing and malformed results fail closed | temporary inability to adopt a valid tightening |
 | Unauthorized caller | immutable creator address guards all writes except views | compromised owner may spam rejected attempts |

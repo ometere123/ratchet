@@ -15,7 +15,7 @@ The contract has **one custom `gl.vm.run_nondet_unsafe` boundary** per candidate
 
 Exact relation enum: `1 STRICTER`, `2 EQUIVALENT`, `3 WEAKER`, `4 INCOMPARABLE`, `5 AMBIGUOUS`.
 
-The validator separately calls an **independent** reasoning prompt containing the same immutable texts. It demands equality on `current`, `genesis`, and `same_scope`, not formatting or textual witness equality. If the leader requests an affirmative `STRICTER/STRICTER` verdict, the validator makes an **additional independent falsification call** searching for carve-outs, reduced duties, changed actor/scope, missing protected cases and newly permitted conduct. Any positive or ambiguous finding vetoes.
+The validator separately calls an **independent** reasoning prompt containing the same immutable texts. It demands equality on `current`, `genesis`, and `same_scope`, not formatting or textual witness equality. The contract exposes these bounded consensus facts separately from `tightening_witness`: the latter is explicitly leader-reported explanatory provenance. If the leader requests an affirmative `STRICTER/STRICTER` verdict, the validator makes an **additional independent falsification call** searching for carve-outs, reduced duties, changed actor/scope, missing protected cases and newly permitted conduct. Any positive or ambiguous finding vetoes.
 
 There is no fallthrough that treats unavailable or malformed LLM data as acceptance. Invalid JSON maps to `AMBIGUOUS`. Invalid return structure and exceptions reject the custom validator. `gl.vm.Return` is required. Model-provided reason and witness are bounded to prevent resource abuse; accepted positive results require a nonempty concrete strengthening witness and no admitted weakening witness.
 

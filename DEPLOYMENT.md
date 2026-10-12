@@ -1,74 +1,52 @@
-# Stable StudioNet 61999 deployment and live-proof checklist
+# Stable StudioNet deployment and live proof
 
-**Deployment status:** deployed and read back on stable StudioNet. The primary Ratchet and the correctly bound optional consumer below are the canonical live deployment evidence for this repository. A superseded consumer deployment with an incorrect track-genesis constructor argument is retained only as an operational-history note.
+Current canonical deployment is on stable StudioNet (`studionet`, chain `61999`, RPC `https://studio.genlayer.com/api`) using repository-local `genlayer@0.39.1`.
 
-## Preflight on Codex workstation
+## Current deployment
+
+- Ratchet: `0x34fc30232010E499e76F9A5F25Fb358Da6b98a2e`
+- Ratchet deployment tx: `0x50946449d78aaa7b072c81ede4ea1e782a11460c405b2fcf9c68eda16f8d1537`
+- Ratchet source SHA-256: `e5e9e2eefcb8ae1a0d789c20ce06df9727097cb9c2eb06967618d6f2e45df0a5`
+- Consumer: `0xEb45842c9DB9A64e573e987077659756506e52fA`
+- Consumer deployment tx: `0x157ef60fc2f2b66bab0b47fc4de9d19ac32b8315d40c4d64d9309572c8f2f0ca`
+- Consumer source SHA-256: `63a9ea986555c6b4c6598bb553b9d41e3d760700fe30ed373ea36c20bbd83e75`
+- Consumer binding: Ratchet above, track `1`, track genesis `88996c8e2ac61e4877ed1b09be4fd7ce55584635670e4221a0f15b4e53793282`, required version `4`.
+
+Both deployment receipts were `FINALIZED`, `MAJORITY_AGREE`, with successful deployment execution. `gen_getContractCode` returned bytes whose SHA-256 exactly matched the local source files. The previous Ratchet and consumer deployments remain historical and are not current evidence.
+
+## Fresh live lifecycle evidence
+
+All writes below were sent to the current addresses and independently polled to `FINALIZED`; no accepted-only state was treated as final.
+
+| Proof | Transaction | Result and readback |
+|---|---|---|
+| Policy create | `0x473145f6c0d14e9982e174577edd32d7bc7f4f5339f18b9f1e1b01973679807c` | `FINALIZED / MAJORITY_AGREE`; policy `1` created |
+| Track 1 register | `0x19f6a97f4eef401d6dcb60b47902b39d1da8f6eeefc80e65e858dc27450714fd` | `FINALIZED`; genesis `88996c8e...93282` |
+| Track 2 register | `0x368ff58b19ce39df0e3bc100e84e91158117f8d6244c7600d979fff5a27209fa` | `FINALIZED` |
+| Policy seal | `0x6af7ae1d938b9fed15e8a1867cf40cff797d8b4f356114214109beb8e81f578d` | `FINALIZED`; sealed with tracks `1,2` |
+| Hidden emergency exception | `0x9ff69e69c8d771710fb163aa818230c1346414d2a7256c8c5dfede0815e3223f` | `FINALIZED`; `REJECTED`, `EXCEPTION_CARVEOUT_WEAKENS`, head unchanged |
+| Scope substitution | `0xd09cb14c7aec4300ec27123df3369cb42d7ede341be316d3842c93432fe9ed39` | `FINALIZED`; `REJECTED`, `DOMESTIC_CARVEOUT_WEAKENS_SCOPE`, head unchanged |
+| Accepted tightening v2 | `0x741cb099ea37b22184475e82591f53d2e677e05aa50ecdbd672099e65beb3ec8` | `FINALIZED`; `ACCEPTED`, version `2` |
+| Accepted tightening v3 | `0xa0c6eebd0d3911d2dc5d5d8c2b7c1837327e12ce427b1ec94802173f80df0108` | `FINALIZED`; `ACCEPTED`, version `3` |
+| Consumer denial before v4 | `0xc5c38072138929cfc9406139a92a2dfb43de22aff54e422fa2e0db9e9c78542f` | `FINALIZED / MAJORITY_AGREE`; execution `ERROR`, rollback `RATCHET_REQUIREMENT_NOT_MET`; action count remained `0` |
+| Accepted tightening v4 | `0x26600fee936c53830876034503c8c63ddf55fc792e6e3555be5639ceb21f0078` | `FINALIZED`; `ACCEPTED`, version `4`, head `4cc64128059f513e3b6fcb4ac5a99751a44ec7d15876b9c991182ba9d0aca913` |
+| Consumer success after v4 | `0xcacdffa082c4e88f4689913b0f109daeccfc5a1ae890c1f404490792d2cde43a` | `FINALIZED / MAJORITY_AGREE`; execution `SUCCESS`; `get_action_count()` read back `1` |
+
+The policy gate now counts distinct qualified tracks, not revisions: repeated accepted tightening of track 1 does not satisfy `is_policy_at_least(policy, 2, genesis)` while track 2 remains at version 1. Direct Mode covers this distinction; the live consumer proof pins one exact track and minimum version.
+
+## Verification commands
 
 ```bash
-cd <unzipped-ratchet-folder>
-npm install                             # installs repo-local genlayer@0.39.1
-./node_modules/.bin/genlayer --version  # must report 0.39.1
-python -m pip install -r requirements-dev.txt
+npm ci
+npm run cli:version
+node scripts/assert_studionet.mjs
 python scripts/preflight.py
 python -m pytest tests/test_offline.py -q
-gltest direct_tests/test_ratchet_direct.py -v -s
-node scripts/assert_studionet.mjs       # must report chain 61999
+gltest direct_tests/test_ratchet_direct.py -q
 ```
 
-`npm ci` should only be used **after** a real `package-lock.json` has been generated and committed by `npm install`. Do not use a global CLI.
+The current verified local counts are: offline `14 passed`, preflight `14/14`, Direct Mode `24 passed`, AST lint `3/3` for each contract, and source parity for both deployed files. The semantic GenVM check remains blocked by the pinned linter’s SDK resolver: `genvm-lint check` returns `E101` because it cannot load `runners/py-genlayer/1j/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6.tar`, even though that member exists in the downloaded `genvm-universal-v0.2.12.tar.xz` archive. This is reported as unresolved; it is not claimed as a semantic lint pass.
 
-## Deploy
+## Historical evidence
 
-```bash
-npm run deploy:guarded  # cross-platform, local CLI 0.39.1 + RPC 61999 guard
-```
-
-The cross-platform script uses only the repository-local `node_modules/.bin/genlayer` executable (or `.cmd` on Windows) and the exact stable RPC `https://studio.genlayer.com/api`. Abort if the CLI's `network info` does not clearly show `studionet` chain 61999. Do not deploy to `studio-dev`, `studio-next`, 61997 or any release-candidate CLI.
-
-## Required on-chain lifecycle evidence
-
-1. Deploy Ratchet, record tx ID/address/source SHA-256 and wait for `FINALIZED` **plus successful execution result**.
-2. Create policy, register a track, seal, and confirm `get_policy`/`get_track` views.
-3. Submit a strict strengthening and inspect `get_amendment` `ACCEPTED`, version 1→2, and head advancement.
-4. Submit a weakening and a stale-head proposal; inspect the rejected/reverted outcomes and unchanged operative head.
-5. Deploy the optional consumer with the exact track genesis hash and minimum version, then prove its protected action succeeds only after the required track version is present.
-6. Verify deployed source matches exact repository bytes. Record SHA-256 of both files, CLI version, transaction IDs, `FINALIZED` results, and canonical readbacks.
-7. Do not infer successful state effects from `ACCEPTED` consensus or `FINALIZED` lifecycle alone; check execution result and view state.
-8. Commit `package-lock.json` generated by the local install, and add verified proof only after capture.
-
-## Evidence manifest template
-
-```yaml
-chain_id: 61999
-network: studionet
-rpc: https://studio.genlayer.com/api
-cli_version: 0.39.1
-contract_sha256: e30e6487d23ab73abe7b5924ede8fe10744069dd49322c50ad53970ea225ebd0
-contract_address: 0xbd1cf148872dD396d06437859B4Bd4c8c0862A86
-deploy_tx: 0xaa10c92091637f7baf036ad10f17f1f46411a1c3f0fc600e4f3159c07ebe0d70
-accepted_amendment_tx: 0xc135226b2de2a5b80fa13363284be772c0efb5fb13fc74904150a0a0fff163f0
-rejected_amendment_tx: 0xe35738508b2e9776b81dade52fb600042d965860163a6f3db22621b8f7b2e9a1
-consumer_contract_address: 0x0176AD19a6968a1D1F4Dd3db5F1833ECe247Ab0f
-consumer_contract_sha256: 63a9ea986555c6b4c6598bb553b9d41e3d760700fe30ed373ea36c20bbd83e75
-consumer_deploy_tx: 0x63e510a837bbb3f59548131f9aa46877966dfa40dd619532fc2560bb51c094fb
-consumer_success_tx: 0xfc82998dddfbe30b030c0f3278dff750e29c775be606eb46de20f02833827b8b
-
-## Captured evidence
-
-- Primary deployment: `0xbd1cf148872dD396d06437859B4Bd4c8c0862A86`, transaction `0xaa10c92091637f7baf036ad10f17f1f46411a1c3f0fc600e4f3159c07ebe0d70`, `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS`.
-- Policy creation: `0x093b380d1e6e62db8f55052005a9fcdb2b1b5e0971b24f0265f76cfb06bfa55`; track registration: `0x1cc8ab1330ffeedecacbe150fdcca195ca20f6aeaf131de47fc379f74cb2501a`; seal: `0x12a7a7e5a3285a55e5cad398aaebc854d7073ec5bac22a929fd00ace5dfd4dd5`.
-- Track 1 genesis: `88996c8e2ac61e4877ed1b09be4fd7ce55584635670e4221a0f15b4e53793282`. Policy seal readback was `sealed=true`.
-- Accepted strengthening (version 1→2): `0xc135226b2de2a5b80fa13363284be772c0efb5fb13fc74904150a0a0fff163f0`; readback `ACCEPTED`, head `406d7ea07ed2fec08b42c6f9493dfa2227515dedaa6786221d59e405d11cf9ef`.
-- Rejected weakening: `0xe35738508b2e9776b81dade52fb600042d965860163a6f3db22621b8f7b2e9a1`; readback `REJECTED`, version/head unchanged.
-- Stale-head attempt: `0x3ada36d4c684b4535a4d514c16d9c1409e831c1ab0847916c392583eb560a626`; lifecycle finalized but execution reverted with `STALE_HEAD`; operative state remained unchanged.
-- Final track revision to version 3: `0x179973b0c3ec6c3591ba1a72bc4cdc2ccd7b72ecca60085407d91912d777548d`; final head `f5df840aef8b2a424851507faba42615e2e72da5d19047f6aa90c51b72be9d26`.
-- Correctly bound consumer: `0x0176AD19a6968a1D1F4Dd3db5F1833ECe247Ab0f`, deployment `0x63e510a837bbb3f59548131f9aa46877966dfa40dd619532fc2560bb51c094fb`, bound to Ratchet `0xbd1cf...2A86`, track `1`, track genesis `88996c8e...93282`, minimum version `2`.
-- Consumer protected action: `0xfc82998dddfbe30b030c0f3278dff750e29c775be606eb46de20f02833827b8b`, `FINALIZED`, execution `SUCCESS`; canonical `get_action_count()` readback `1`.
-- Source parity: `gen_getContractCode` returned bytes whose SHA-256 exactly matches both local contract files (`e30e6487...5ebd0` and `63a9ea98...3e75`).
-
-The earlier consumer deployment `0xF2F45c0298aD0a561F40713B38F6f637b4e143DA` used the policy genesis hash instead of the track genesis hash and is superseded; it is not canonical evidence.
-```
-
-## Absolute restrictions
-
-No Docker or Studio-dev is required. Do not switch chain to 61997 for convenience, don't remove `# Depends` hash without a pinned runtime compatibility review, don't introduce a frontend, and don't write fabricated proof claims into the README. The GenVM linter's AST checks passed; its semantic SDK validation could not run because the pinned runner tarball was unavailable in the local linter cache.
+The superseded Ratchet `0xbd1cf148872dD396d06437859B4Bd4c8c0862A86` and consumer `0x0176AD19a6968a1D1F4Dd3db5F1833ECe247Ab0f`, including their transactions and source hashes, are historical only. They must not be used as evidence for the current deployment.

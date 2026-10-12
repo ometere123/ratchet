@@ -24,7 +24,7 @@ A Policy never returns to draft, can never add/remove tracks after sealing, and 
 | Subset relation vs current | ownership |
 | Subset relation vs genesis | irreversible sealing |
 | Domain-preservation judgement | immutable roots, bounds |
-| Concrete tightening witness | witness length and shape |
+| Bounded relation, scope and adversarial-audit facts | witness length, shape and explicit leader-reported provenance |
 | Independent re-analysis | strictly-positive admission predicate |
 | Adversarial counterexample search | version/attempt counters, hash lineage |
 

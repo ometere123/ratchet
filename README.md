@@ -44,7 +44,7 @@ For natural language, subset containment of the set of allowed behaviours is not
 One `gl.vm.run_nondet_unsafe` custom boundary does three things:
 
 1. **Leader assessment:** strictly bounded enum relation against current AND genesis, a scope flag, reason and concrete strengthening/weakening witness.
-2. **Independent validator:** independently assesses the frozen texts; must agree on both relations and scope preservation, not just JSON shape.
+2. **Independent validator:** independently assesses the frozen texts; must agree on both relations and scope preservation, not just JSON shape. Accepted material facts are the relation-to-head/genesis, scope preservation and adversarial-audit result; natural-language witnesses are retained as leader-reported explanations.
 3. **Adversarial counterexample audit:** validator actively searches for a formerly forbidden behaviour newly allowed by the candidate. Any weakening, incomparability, ambiguity, malformed answer, unavailable inference or validator disagreement rejects consensus.
 
 Only a candidate with **`STRICTER` vs current AND `STRICTER` vs genesis AND `same_frozen_scope=true`** can advance state. Equivalent restatements are intentionally not accepted to prevent meaningless canon churn. Full prompt and threat analysis: [docs/CONSENSUS.md](docs/CONSENSUS.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
@@ -63,6 +63,8 @@ propose_revision(track_id: u256, new_text: str, expected_head_hash: str) -> u256
 Only the creator owns the policy and may register/seal/revise. Tracks can only be registered **before** the policy is sealed. `propose_revision` returns an amendment receipt ID; the receipt can be `ACCEPTED` or `REJECTED`. Call `get_amendment()` before interpreting a returned ID as success.
 
 **Views:** `get_policy`, `get_track`, `get_amendment`, `current_track_hash`, `current_policy_hash`, `is_track_at_least`, `is_policy_at_least`, `matches_policy_head`.
+
+`is_policy_at_least(policy_id, minimum_accepted, expected_genesis_hash)` counts distinct tracks with at least one accepted tightening (`version > 1`); repeated revisions of one track never satisfy a multi-track requirement. Consumers needing an exact track requirement should use `is_track_at_least` for each pinned track.
 
 **Composability:** A consumer pins the exact Ratchet contract address + track ID + `genesis_hash` + minimum version. The `is_track_at_least(...)` predicate can only turn from false to true **assuming each accepted semantic admission was correct**; history is irreversible. `matches_policy_head` instead implements exact invalidation whenever any sealed track changes. See [docs/INTEGRATION.md](docs/INTEGRATION.md) and the small separate [example consumer](contracts/ratchet_consumer_example.py). The consumer is not needed for the primitive and does not create a frontend.
 
@@ -91,7 +93,7 @@ python -m pip install -r requirements-dev.txt
 gltest direct_tests/test_ratchet_direct.py -v -s
 ```
 
-The Direct Mode suite includes malicious leader, independent disagreement, adversarial weakening, genesis erosion, invalid scope, stale hash, ownership, immutability and consumer view scenarios. The verified local run is `21 passed`, including the Windows loader compatibility shim in `direct_tests/conftest.py`; that shim does not alter contract/runtime behaviour.
+The Direct Mode suite includes malicious leader, independent disagreement, adversarial weakening, genesis erosion, invalid scope, stale hash, ownership, immutability, distinct-track policy gates, witness provenance and consumer binding scenarios. The verified local run is `24 passed`, including the Windows loader compatibility shim in `direct_tests/conftest.py`; that shim does not alter contract/runtime behaviour.
 
 ## Stable StudioNet deployment — never the preview
 
@@ -108,7 +110,7 @@ The exact deployment RPC is `https://studio.genlayer.com/api` (stable `studionet
 
 ### Proof status
 
-**Current proof status:** deployed on stable StudioNet 61999 with source parity verified. Ratchet is `0xbd1cf148872dD396d06437859B4Bd4c8c0862A86` and its source SHA-256 is `e30e6487d23ab73abe7b5924ede8fe10744069dd49322c50ad53970ea225ebd0`. The correctly bound optional consumer is `0x0176AD19a6968a1D1F4Dd3db5F1833ECe247Ab0f` with source SHA-256 `63a9ea986555c6b4c6598bb553b9d41e3d760700fe30ed373ea36c20bbd83e75`. The successful consumer protected-action transaction finalized and `get_action_count()` read back `1`. These are live chain facts; Direct Mode and offline tests remain separate evidence layers. See [DEPLOYMENT.md](DEPLOYMENT.md) for transaction hashes, readbacks, and the semantic-lint limitation.
+**Current proof status:** deployed on stable StudioNet 61999 with source parity verified. Ratchet is `0x34fc30232010E499e76F9A5F25Fb358Da6b98a2e` and its source SHA-256 is `e5e9e2eefcb8ae1a0d789c20ce06df9727097cb9c2eb06967618d6f2e45df0a5`. The correctly bound optional consumer is `0xEb45842c9DB9A64e573e987077659756506e52fA` with source SHA-256 `63a9ea986555c6b4c6598bb553b9d41e3d760700fe30ed373ea36c20bbd83e75`. The final live consumer proof finalized a denial before version 4 and a successful protected action after version 4; `get_action_count()` read back `1`. These are live chain facts; Direct Mode and offline tests remain separate evidence layers. See [DEPLOYMENT.md](DEPLOYMENT.md) for transaction hashes, readbacks, and the semantic-lint limitation.
 
 ## Repository contents
 
